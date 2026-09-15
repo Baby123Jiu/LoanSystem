@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Payments - Loan Management System</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <header class="navbar">
+
+        <div class="container nav-container">
+
+            <a href="dashboard.html" class="logo">
+                Loan<span>Manager</span>
+            </a>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="loan-details.html">
+                    Loan Details
+                </a>
+
+                <button
+                    type="button"
+                    id="logoutButton"
+                    class="nav-button"
+                >
+                    Logout
+                </button>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <section class="form-section">
+
+            <div class="container">
+
+                <div class="page-heading">
+
+                    <p class="eyebrow">
+                        Repay Your Loan
+                    </p>
+
+                    <h1>
+                        Make a Payment
+                    </h1>
+
+                    <p>
+                        Make a payment toward your outstanding loan balance.
+                    </p>
+
+                </div>
+
+
+                <div class="payment-layout">
+
+
+                    <!-- Balance Card -->
+
+                    <div class="dashboard-card">
+
+                        <span class="summary-label">
+                            Outstanding Balance
+                        </span>
+
+                        <h2
+                            id="paymentBalance"
+                            class="large-amount"
+                        >
+                            GH₵ 0.00
+                        </h2>
+
+                        <p>
+                            Your payment will be applied to your
+                            outstanding loan balance.
+                        </p>
+
+                    </div>
+
+
+                    <!-- Payment Form -->
+
+                    <div class="dashboard-card">
+
+                        <h2>Payment Information</h2>
+
+                        <form id="paymentForm">
+
+                            <div class="form-group">
+
+                                <label for="paymentAmount">
+                                    Payment Amount (GH₵)
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="paymentAmount"
+                                    name="paymentAmount"
+                                    min="0.01"
+                                    step="0.01"
+                                    placeholder="Enter payment amount"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="paymentReference">
+                                    Payment Reference
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="paymentReference"
+                                    name="paymentReference"
+                                    placeholder="Optional reference"
+                                >
+
+                            </div>
+
+
+                            <div
+                                id="paymentMessage"
+                                class="form-message"
+                            ></div>
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-full"
+                            >
+                                Make Payment
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Payment History -->
+
+                <div class="dashboard-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+                            <h2>Payment History</h2>
+
+                            <p>
+                                Payments previously made toward your loan.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Reference</th>
+                                    <th>Amount</th>
+                                    <th>Balance After Payment</th>
+                                </tr>
+
+                            </thead>
+
+
+                            <tbody id="paymentTableBody">
+
+                                <tr>
+                                    <td colspan="4" class="table-empty">
+                                        No payment history available.
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="js/main.js"></script>
+    <script src="js/payments.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>

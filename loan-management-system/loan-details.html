@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Loan Details - Loan Management System</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <header class="navbar">
+
+        <div class="container nav-container">
+
+            <a href="dashboard.html" class="logo">
+                Loan<span>Manager</span>
+            </a>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="payments.html">
+                    Payments
+                </a>
+
+                <button
+                    type="button"
+                    id="logoutButton"
+                    class="nav-button"
+                >
+                    Logout
+                </button>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <section class="form-section">
+
+            <div class="container">
+
+                <div class="page-heading">
+
+                    <p class="eyebrow">
+                        Loan Account
+                    </p>
+
+                    <h1>
+                        Loan Details
+                    </h1>
+
+                    <p>
+                        Review your loan and repayment information.
+                    </p>
+
+                </div>
+
+
+                <div class="summary-grid">
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Original Loan
+                        </span>
+
+                        <strong id="detailPrincipal">
+                            GH₵ 0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Total Repayment
+                        </span>
+
+                        <strong id="detailTotal">
+                            GH₵ 0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Amount Paid
+                        </span>
+
+                        <strong id="detailPaid">
+                            GH₵ 0.00
+                        </strong>
+
+                    </div>
+
+
+                    <div class="summary-card">
+
+                        <span class="summary-label">
+                            Remaining Balance
+                        </span>
+
+                        <strong id="detailBalance">
+                            GH₵ 0.00
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+                            <h2>Loan Information</h2>
+                        </div>
+
+                        <span
+                            id="detailStatus"
+                            class="status status-active"
+                        >
+                            Active
+                        </span>
+
+                    </div>
+
+
+                    <div class="details-grid">
+
+                        <div class="detail-item">
+                            <span>Loan Amount</span>
+                            <strong id="detailLoanAmount">
+                                GH₵ 0.00
+                            </strong>
+                        </div>
+
+                        <div class="detail-item">
+                            <span>Interest Rate</span>
+                            <strong id="detailInterestRate">
+                                0%
+                            </strong>
+                        </div>
+
+                        <div class="detail-item">
+                            <span>Duration</span>
+                            <strong id="detailDuration">
+                                -
+                            </strong>
+                        </div>
+
+                        <div class="detail-item">
+                            <span>Repayment Method</span>
+                            <strong id="detailMethod">
+                                -
+                            </strong>
+                        </div>
+
+                        <div class="detail-item">
+                            <span>Monthly Payment</span>
+                            <strong id="detailMonthly">
+                                GH₵ 0.00
+                            </strong>
+                        </div>
+
+                        <div class="detail-item">
+                            <span>Next Payment</span>
+                            <strong id="detailNextPayment">
+                                -
+                            </strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="dashboard-card">
+
+                    <div class="card-title-row">
+
+                        <div>
+                            <h2>Repayment Schedule</h2>
+
+                            <p>
+                                Your expected payment schedule.
+                            </p>
+                        </div>
+
+                    </div>
+
+
+                    <div class="table-wrapper">
+
+                        <table>
+
+                            <thead>
+
+                                <tr>
+                                    <th>#</th>
+                                    <th>Due Date</th>
+                                    <th>Amount</th>
+                                    <th>Principal</th>
+                                    <th>Interest</th>
+                                    <th>Status</th>
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="scheduleTableBody">
+
+                                <tr>
+                                    <td colspan="6" class="table-empty">
+                                        No repayment schedule available.
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="js/main.js"></script>
+    <script src="js/loan.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>

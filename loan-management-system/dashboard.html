@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard | LoanManager</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="dashboard-wrapper">
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="sidebar">
+
+        <!-- Logo -->
+        <div class="logo">
+            <h1>🌿 LoanManager</h1>
+            <p>Your Goals, Our Support</p>
+        </div>
+
+
+        <!-- Navigation -->
+        <nav class="sidebar-nav">
+
+            <a href="dashboard.html" class="active">
+                <span class="nav-icon">⌂</span>
+                <span>Dashboard</span>
+            </a>
+
+            <a href="apply-loan.html">
+                <span class="nav-icon">▣</span>
+                <span>Apply for Loan</span>
+            </a>
+
+            <a href="loan-details.html">
+                <span class="nav-icon">▤</span>
+                <span>My Loans</span>
+            </a>
+
+            <a href="payments.html">
+                <span class="nav-icon">▤</span>
+                <span>Payments</span>
+            </a>
+
+            <a href="#">
+                <span class="nav-icon">♙</span>
+                <span>Profile</span>
+            </a>
+
+            <a href="#">
+                <span class="nav-icon">⚙</span>
+                <span>Settings</span>
+            </a>
+
+            <a href="#" id="logoutButton">
+                <span class="nav-icon">↪</span>
+                <span>Logout</span>
+            </a>
+
+        </nav>
+
+
+        <!-- Quote -->
+        <div class="sidebar-quote">
+            “Financial freedom is not a dream,
+            it’s a plan.”
+            <br>
+            🌿
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN DASHBOARD
+    ====================================================== -->
+
+    <main class="dashboard-main">
+
+
+        <!-- =================================================
+             TOP BAR
+        ================================================== -->
+
+        <header class="topbar">
+
+            <div class="user-area">
+
+                <!-- Notification -->
+                <div class="notification">
+                    ♧
+                </div>
+
+                <!-- Profile -->
+                <div class="profile">
+
+                    <div class="profile-avatar">
+                        A
+                    </div>
+
+                    <div>
+                        <small>Good morning</small>
+
+                        <strong id="customerName">
+                            Customer
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =================================================
+             WELCOME / HERO
+        ================================================== -->
+
+        <section class="hero">
+
+            <div class="hero-content">
+
+                <div class="hero-label">
+                    WELCOME BACK,
+                </div>
+
+                <h2>
+                    Manage Your Loans
+                    <br>
+                    With Confidence
+                </h2>
+
+                <p>
+                    Track your loans, make payments, and achieve
+                    your financial goals — all in one place.
+                </p>
+
+                <div class="hero-button">
+                    🌿
+                    Your financial journey matters
+                </div>
+
+            </div>
+
+
+            <!-- Decorative money stacks -->
+            <div class="money-decoration">
+
+                <div class="coin-stack small"></div>
+
+                <div class="coin-stack medium"></div>
+
+                <div class="coin-stack large"></div>
+
+                <div class="coin-stack xlarge"></div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             SUMMARY CARDS
+        ================================================== -->
+
+        <section class="stats-grid">
+
+
+            <!-- Total Loan -->
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    $
+                </div>
+
+                <span>
+                    Total Loan Amount
+                </span>
+
+                <strong id="totalLoan">
+                    GH₵ 8,500.00
+                </strong>
+
+                <small>
+                    Current balance
+                </small>
+
+            </div>
+
+
+            <!-- Interest Rate -->
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    %
+                </div>
+
+                <span>
+                    Interest Rate
+                </span>
+
+                <strong id="interestRate">
+                    6.5%
+                </strong>
+
+                <small>
+                    Per annum
+                </small>
+
+            </div>
+
+
+            <!-- Next Payment -->
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ▣
+                </div>
+
+                <span>
+                    Next Payment
+                </span>
+
+                <strong id="nextPayment">
+                    Oct 15, 2026
+                </strong>
+
+                <small>
+                    Due date
+                </small>
+
+            </div>
+
+
+            <!-- Remaining Balance -->
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    ◉
+                </div>
+
+                <span>
+                    Remaining Balance
+                </span>
+
+                <strong id="remainingBalance">
+                    GH₵ 5,950.00
+                </strong>
+
+                <small>
+                    7 months left
+                </small>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             MIDDLE CONTENT
+        ================================================== -->
+
+        <section class="content-grid">
+
+
+            <!-- =============================================
+                 LOAN OVERVIEW
+            ============================================== -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <h3>
+                        📊 Loan Overview
+                    </h3>
+
+                    <a href="loan-details.html"
+                       class="card-link">
+                        View Details →
+                    </a>
+
+                </div>
+
+
+                <div class="loan-overview">
+
+
+                    <!-- Progress -->
+                    <div class="progress-circle">
+
+                        <div class="progress-text">
+
+                            <strong id="loanProgress">
+                                30%
+                            </strong>
+
+                            <span>
+                                Paid
+                            </span>
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- Loan Information -->
+                    <div class="loan-summary">
+
+
+                        <div class="loan-row">
+
+                            <span>
+                                Total Loan Amount
+                            </span>
+
+                            <strong id="overviewTotalLoan">
+                                GH₵ 8,500.00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="loan-row">
+
+                            <span>
+                                Amount Paid
+                            </span>
+
+                            <strong id="amountPaid">
+                                GH₵ 2,550.00
+                            </strong>
+
+                        </div>
+
+
+                        <div class="loan-row">
+
+                            <span>
+                                Remaining Balance
+                            </span>
+
+                            <strong id="overviewRemainingBalance">
+                                GH₵ 5,950.00
+                            </strong>
+
+                        </div>
+
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =============================================
+                 RECENT ACTIVITY
+            ============================================== -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <h3>
+                        ◷ Recent Activity
+                    </h3>
+
+                    <a href="payments.html"
+                       class="card-link">
+                        View All →
+                    </a>
+
+                </div>
+
+
+                <div class="activity-list">
+
+
+                    <!-- Activity 1 -->
+                    <div class="activity-item">
+
+                        <div class="activity-icon">
+                            ✓
+                        </div>
+
+                        <div class="activity-info">
+
+                            <strong>
+                                Loan Application Approved
+                            </strong>
+
+                            <span>
+                                Your loan has been approved
+                            </span>
+
+                        </div>
+
+                        <div class="activity-date">
+                            Oct 10, 2026
+                        </div>
+
+                    </div>
+
+
+                    <!-- Activity 2 -->
+                    <div class="activity-item">
+
+                        <div class="activity-icon">
+                            $
+                        </div>
+
+                        <div class="activity-info">
+
+                            <strong>
+                                Payment Received
+                            </strong>
+
+                            <span>
+                                GH₵ 500.00 received
+                            </span>
+
+                        </div>
+
+                        <div class="activity-date">
+                            Oct 05, 2026
+                        </div>
+
+                    </div>
+
+
+                    <!-- Activity 3 -->
+                    <div class="activity-item">
+
+                        <div class="activity-icon">
+                            ➤
+                        </div>
+
+                        <div class="activity-info">
+
+                            <strong>
+                                Loan Disbursed
+                            </strong>
+
+                            <span>
+                                GH₵ 8,500.00 sent to your account
+                            </span>
+
+                        </div>
+
+                        <div class="activity-date">
+                            Oct 01, 2026
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             BOTTOM CONTENT
+        ================================================== -->
+
+        <section class="bottom-grid">
+
+
+            <!-- =============================================
+                 NEED A LOAN
+            ============================================== -->
+
+            <div class="loan-callout">
+
+                <h3>
+                    Need a Loan?
+                </h3>
+
+                <p>
+                    Get the funds you need for your dreams,
+                    business or emergencies.
+                </p>
+
+                <a href="apply-loan.html"
+                   class="apply-button">
+                    Apply Now →
+                </a>
+
+            </div>
+
+
+            <!-- =============================================
+                 QUICK ACTIONS
+            ============================================== -->
+
+            <div class="dashboard-card">
+
+                <div class="card-header">
+
+                    <h3>
+                        ⚡ Quick Actions
+                    </h3>
+
+                </div>
+
+
+                <div class="quick-actions">
+
+
+                    <a href="apply-loan.html"
+                       class="quick-action">
+
+                        <span class="quick-action-icon">
+                            ▤
+                        </span>
+
+                        <span>
+                            Apply for Loan
+                        </span>
+
+                    </a>
+
+
+                    <a href="payments.html"
+                       class="quick-action">
+
+                        <span class="quick-action-icon">
+                            ▭
+                        </span>
+
+                        <span>
+                            Make Payment
+                        </span>
+
+                    </a>
+
+
+                    <a href="loan-details.html"
+                       class="quick-action">
+
+                        <span class="quick-action-icon">
+                            ◎
+                        </span>
+
+                        <span>
+                            View Loans
+                        </span>
+
+                    </a>
+
+
+                    <a href="#"
+                       class="quick-action">
+
+                        <span class="quick-action-icon">
+                            ♙
+                        </span>
+
+                        <span>
+                            Update Profile
+                        </span>
+
+                    </a>
+
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+====================================================== -->
+
+<script src="js/main.js"></script>
+<script src="js/auth.js"></script>
+
+</body>
+</html>

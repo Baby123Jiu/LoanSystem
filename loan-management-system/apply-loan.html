@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Apply for Loan - Loan Management System</title>
+
+    <link rel="stylesheet" href="css/style.css">
+
+</head>
+
+
+<body>
+
+    <header class="navbar">
+
+        <div class="container nav-container">
+
+            <a href="dashboard.html" class="logo">
+                Loan<span>Manager</span>
+            </a>
+
+            <nav>
+
+                <a href="dashboard.html">
+                    Dashboard
+                </a>
+
+                <a href="payments.html">
+                    Payments
+                </a>
+
+                <button
+                    type="button"
+                    id="logoutButton"
+                    class="nav-button"
+                >
+                    Logout
+                </button>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <main>
+
+        <section class="form-section">
+
+            <div class="container">
+
+                <div class="page-heading">
+
+                    <p class="eyebrow">
+                        Loan Application
+                    </p>
+
+                    <h1>
+                        Apply for a Loan
+                    </h1>
+
+                    <p>
+                        Enter your loan information to see an
+                        estimated repayment before submitting.
+                    </p>
+
+                </div>
+
+
+                <div class="loan-application-layout">
+
+
+                    <!-- Loan Form -->
+
+                    <div class="dashboard-card">
+
+                        <h2>Loan Information</h2>
+
+                        <p class="card-description">
+                            Provide the details of the loan you want.
+                        </p>
+
+
+                        <form id="loanForm">
+
+                            <div class="form-group">
+
+                                <label for="loanAmount">
+                                    Loan Amount (GH₵)
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="loanAmount"
+                                    name="loanAmount"
+                                    min="1"
+                                    step="0.01"
+                                    placeholder="e.g. 10000"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-row">
+
+                                <div class="form-group">
+
+                                    <label for="duration">
+                                        Duration
+                                    </label>
+
+                                    <input
+                                        type="number"
+                                        id="duration"
+                                        name="duration"
+                                        min="1"
+                                        step="1"
+                                        placeholder="e.g. 12"
+                                        required
+                                    >
+
+                                </div>
+
+
+                                <div class="form-group">
+
+                                    <label for="durationType">
+                                        Duration Type
+                                    </label>
+
+                                    <select
+                                        id="durationType"
+                                        name="durationType"
+                                        required
+                                    >
+
+                                        <option value="months">
+                                            Months
+                                        </option>
+
+                                        <option value="years">
+                                            Years
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="interestRate">
+                                    Annual Interest Rate (%)
+                                </label>
+
+                                <input
+                                    type="number"
+                                    id="interestRate"
+                                    name="interestRate"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="e.g. 10"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label for="repaymentMethod">
+                                    Repayment / Interest Method
+                                </label>
+
+                                <select
+                                    id="repaymentMethod"
+                                    name="repaymentMethod"
+                                    required
+                                >
+
+                                    <option value="flat">
+                                        Fixed / Flat Rate
+                                    </option>
+
+                                    <option value="reducing">
+                                        Reducing Balance
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div
+                                id="loanMessage"
+                                class="form-message"
+                            ></div>
+
+
+                            <button
+                                type="submit"
+                                class="btn btn-primary btn-full"
+                            >
+                                Calculate Loan
+                            </button>
+
+                        </form>
+
+                    </div>
+
+
+                    <!-- Calculation Result -->
+
+                    <div
+                        class="dashboard-card calculation-card"
+                        id="calculationResult"
+                    >
+
+                        <div class="calculation-header">
+
+                            <span class="badge">
+                                Loan Estimate
+                            </span>
+
+                            <h2>
+                                Repayment Summary
+                            </h2>
+
+                        </div>
+
+
+                        <div class="calculation-list">
+
+                            <div class="calculation-item">
+
+                                <span>
+                                    Principal
+                                </span>
+
+                                <strong id="resultPrincipal">
+                                    GH₵ 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="calculation-item">
+
+                                <span>
+                                    Interest
+                                </span>
+
+                                <strong id="resultInterest">
+                                    GH₵ 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="calculation-item">
+
+                                <span>
+                                    Total Repayment
+                                </span>
+
+                                <strong id="resultTotal">
+                                    GH₵ 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="calculation-item highlight">
+
+                                <span>
+                                    Monthly Payment
+                                </span>
+
+                                <strong id="resultMonthly">
+                                    GH₵ 0.00
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <div
+                            id="schedulePreview"
+                            class="schedule-preview"
+                        >
+
+                            <p>
+                                Enter your loan details and click
+                                "Calculate Loan" to see your estimate.
+                            </p>
+
+                        </div>
+
+
+                        <button
+                            type="button"
+                            id="submitLoanButton"
+                            class="btn btn-primary btn-full"
+                            disabled
+                        >
+                            Submit Loan Application
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <script src="js/main.js"></script>
+    <script src="js/loan.js"></script>
+    <script src="js/auth.js"></script>
+
+</body>
+</html>
