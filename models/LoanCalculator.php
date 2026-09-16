@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 class LoanCalculator
 {
-    public function calculateFlat($amount, $rate, $years, $frequency)
+    private const ALLOWED_FREQUENCIES = ['monthly', 'yearly'];
+    private const ALLOWED_METHODS = ['flat', 'reducing'];
+
+    public function calculateFlat(float $amount, float $rate, int $years, string $frequency): array
     {
+        $this->validateLoanInputs($amount, $rate, $years, $frequency);
+
         $interest = $amount * ($rate / 100) * $years;
-
         $totalPayable = $amount + $interest;
-
-        if ($frequency === "monthly") {
-            $numberOfInstallments = $years * 12;
-        } else {
-            $numberOfInstallments = $years;
-        }
-
+        $numberOfInstallments = $this->getInstallmentCount($years, $frequency);
         $installmentAmount = $totalPayable / $numberOfInstallments;
 
         return [
@@ -26,24 +26,20 @@ class LoanCalculator
         ];
     }
 
-    public function calculateReducing($amount, $rate, $years, $frequency)
+    public function calculateReducing(float $amount, float $rate, int $years, string $frequency): array
     {
-        if ($frequency === "monthly") {
-            $numberOfInstallments = $years * 12;
-            $periodicRate = ($rate / 100) / 12;
-        } else {
-            $numberOfInstallments = $years;
-            $periodicRate = $rate / 100;
-        }
+        $this->validateLoanInputs($amount, $rate, $years, $frequency);
 
-        if ($rate == 0) {
+        $numberOfInstallments = $this->getInstallmentCount($years, $frequency);
+        $periodicRate = $this->getPeriodicRate($rate, $frequency);
+
+        if ($rate === 0.0) {
             $installmentAmount = $amount / $numberOfInstallments;
             $totalPayable = $amount;
-            $interest = 0;
+            $interest = 0.0;
         } else {
             $installmentAmount = $amount * $periodicRate * (1 + $periodicRate) ** $numberOfInstallments
                 / ((1 + $periodicRate) ** $numberOfInstallments - 1);
-
             $totalPayable = $installmentAmount * $numberOfInstallments;
             $interest = $totalPayable - $amount;
         }
@@ -58,14 +54,28 @@ class LoanCalculator
         ];
     }
 
-    public function calculateRemainingBalance($amount, $rate, $years, $frequency, $method, $installmentsPaid)
-    {
-        if ($frequency === "monthly") {
-            $numberOfInstallments = $years * 12;
-            $periodicRate = ($rate / 100) / 12;
-        } else {
-            $numberOfInstallments = $years;
-            $periodicRate = $rate / 100;
+    public function calculateRemainingBalance(
+        float $amount,
+        float $rate,
+        int $years,
+        string $frequency,
+        string $method,
+        int $installmentsPaid
+    ): float {
+        $this->validateLoanInputs($amount, $rate, $years, $frequency);
+
+        if (!in_array($method, self::ALLOWED_METHODS, true)) {
+            throw new InvalidArgumentException(
+                "Method must be one of: " . implode(', ', self::ALLOWED_METHODS)
+            );
+        }
+
+        $numberOfInstallments = $this->getInstallmentCount($years, $frequency);
+
+        if ($installmentsPaid < 0 || $installmentsPaid > $numberOfInstallments) {
+            throw new InvalidArgumentException(
+                "installmentsPaid must be between 0 and {$numberOfInstallments}."
+            );
         }
 
         if ($method === "flat") {
@@ -76,7 +86,9 @@ class LoanCalculator
         }
 
         // Reducing balance
-        if ($rate == 0) {
+        $periodicRate = $this->getPeriodicRate($rate, $frequency);
+
+        if ($rate === 0.0) {
             $remaining = $amount - ($amount / $numberOfInstallments) * $installmentsPaid;
 
             return round(max($remaining, 0), 2);
@@ -87,5 +99,36 @@ class LoanCalculator
             / ((1 + $periodicRate) ** $numberOfInstallments - 1);
 
         return round(max($remaining, 0), 2);
+    }
+
+    private function validateLoanInputs(float $amount, float $rate, int $years, string $frequency): void
+    {
+        if ($amount <= 0) {
+            throw new InvalidArgumentException("Amount must be greater than zero.");
+        }
+
+        if ($rate < 0) {
+            throw new InvalidArgumentException("Rate cannot be negative.");
+        }
+
+        if ($years <= 0) {
+            throw new InvalidArgumentException("Years must be greater than zero.");
+        }
+
+        if (!in_array($frequency, self::ALLOWED_FREQUENCIES, true)) {
+            throw new InvalidArgumentException(
+                "Frequency must be one of: " . implode(', ', self::ALLOWED_FREQUENCIES)
+            );
+        }
+    }
+
+    private function getInstallmentCount(int $years, string $frequency): int
+    {
+        return $frequency === "monthly" ? $years * 12 : $years;
+    }
+
+    private function getPeriodicRate(float $rate, string $frequency): float
+    {
+        return $frequency === "monthly" ? ($rate / 100) / 12 : $rate / 100;
     }
 }
