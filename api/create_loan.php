@@ -1,6 +1,8 @@
 <?php
 
+require_once "../middleware/auth.php";
 header("Content-Type: application/json");
+requireLogin();
 
 require_once "../models/LoanCalculator.php";
 require_once "../config/Database.php";
