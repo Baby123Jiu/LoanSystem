@@ -26,10 +26,13 @@ class Database
             );
 
         } catch (PDOException $exception) {
-            echo "Database connection error: " . $exception->getMessage();
+            // Don't echo here - this class may be used inside a JSON API,
+            // and printing raw text would corrupt the response body.
+            // Log it instead and let the caller decide how to respond.
+            error_log("Database connection error: " . $exception->getMessage());
+            $this->conn = null;
         }
 
         return $this->conn;
     }
 }
-?>
