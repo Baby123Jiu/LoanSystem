@@ -84,6 +84,7 @@ class LoanCalculator
 
             return round(max($remaining, 0), 2);
         }
+        
 
         // Reducing balance
         $periodicRate = $this->getPeriodicRate($rate, $frequency);
@@ -131,4 +132,67 @@ class LoanCalculator
     {
         return $frequency === "monthly" ? ($rate / 100) / 12 : $rate / 100;
     }
+    
+    public function generateSchedule(float $amount, float $rate, int $years, string $frequency, string $method): array
+{
+    $this->validateLoanInputs($amount, $rate, $years, $frequency);
+
+    if (!in_array($method, self::ALLOWED_METHODS, true)) {
+        throw new InvalidArgumentException(
+            "Method must be one of: " . implode(', ', self::ALLOWED_METHODS)
+        );
+    }
+
+    $numberOfInstallments = $this->getInstallmentCount($years, $frequency);
+    $schedule = [];
+
+    if ($method === "flat") {
+        $result = $this->calculateFlat($amount, $rate, $years, $frequency);
+        $installmentAmount = $result["installment_amount"];
+        $remaining = $result["total_payable"];
+
+        for ($period = 1; $period <= $numberOfInstallments; $period++) {
+            $payment = $period === $numberOfInstallments ? $remaining : $installmentAmount;
+            $remaining = round($remaining - $payment, 2);
+
+            $schedule[] = [
+                "period" => $period,
+                "installment_amount" => round($payment, 2),
+                "remaining_balance" => max($remaining, 0)
+            ];
+        }
+
+        return $schedule;
+    }
+
+    // Reducing balance
+    $periodicRate = $this->getPeriodicRate($rate, $frequency);
+    $result = $this->calculateReducing($amount, $rate, $years, $frequency);
+    $installmentAmount = $result["installment_amount"];
+    $remaining = $amount;
+
+    for ($period = 1; $period <= $numberOfInstallments; $period++) {
+        $interestComponent = round($remaining * $periodicRate, 2);
+        $principalComponent = round($installmentAmount - $interestComponent, 2);
+
+        if ($period === $numberOfInstallments) {
+            $principalComponent = round($remaining, 2);
+            $paymentThisPeriod = round($principalComponent + $interestComponent, 2);
+        } else {
+            $paymentThisPeriod = round($installmentAmount, 2);
+        }
+
+        $remaining = round($remaining - $principalComponent, 2);
+
+        $schedule[] = [
+            "period" => $period,
+            "installment_amount" => $paymentThisPeriod,
+            "principal_component" => $principalComponent,
+            "interest_component" => $interestComponent,
+            "remaining_balance" => max($remaining, 0)
+        ];
+    }
+
+    return $schedule;
+}
 }
