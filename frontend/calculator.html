@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — Calculator</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Loan Desk</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="find-customer.html" data-staff-only>Customers</a>
+      <a href="calculator.html" class="active">Calculator</a>
+      <a href="activity-log.html" data-admin-only>Activity Log</a>
+      <a href="manage-staff.html" data-admin-only>Manage Staff</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-link">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="main">
+      <div class="page-head"><h1>Calculator</h1></div>
+      <p class="lede">Try any numbers — nothing here is saved.</p>
+
+      <div class="form-card">
+        <div class="grid">
+          <div class="field"><label>Amount</label><input id="amount" value="50000" /></div>
+          <div class="field"><label>Rate (%)</label><input id="rate" value="12" /></div>
+          <div class="field"><label>Years</label><input id="years" value="1" /></div>
+          <div class="field"><label>Frequency</label>
+            <select id="frequency"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+          </div>
+          <div class="field"><label>Method</label>
+            <select id="method"><option value="reducing">Reducing balance</option><option value="flat">Flat interest</option></select>
+          </div>
+        </div>
+        <button class="btn" onclick="calculate()">Calculate</button>
+        <div id="banner" class="banner"></div>
+        <div id="stats" class="stats"></div>
+      </div>
+
+      <div id="scheduleWrap" style="display:none;">
+        <div class="form-card">
+          <table id="scheduleTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+requirePageLogin();
+
+const user = currentUser();
+document.getElementById('sidebarName').textContent = user.username;
+document.getElementById('sidebarRole').textContent = user.role;
+
+function setBanner(kind, text) {
+  const el = document.getElementById('banner');
+  el.className = 'banner show ' + kind;
+  el.textContent = text;
+}
+function clearBanner() { document.getElementById('banner').className = 'banner'; }
+
+function renderStats(result) {
+  const el = document.getElementById('stats');
+  el.className = 'stats show';
+  el.innerHTML =
+    '<div class="stat hero"><div class="label">Installment</div><div class="value">' + result.installment_amount + '</div></div>' +
+    '<div class="stat"><div class="label">Principal</div><div class="value">' + result.principal + '</div></div>' +
+    '<div class="stat"><div class="label">Interest</div><div class="value">' + result.interest + '</div></div>' +
+    '<div class="stat"><div class="label">Total payable</div><div class="value">' + result.total_payable + '</div></div>' +
+    '<div class="stat"><div class="label">Installments</div><div class="value">' + result.number_of_installments + '</div></div>';
+}
+
+function calcDueDate(period, frequency) {
+  const monthsPerPeriod = frequency === 'monthly' ? 1 : 12;
+  const date = new Date();
+  date.setMonth(date.getMonth() + (period * monthsPerPeriod));
+  return date.toISOString().split('T')[0];
+}
+
+function renderSchedule(schedule) {
+  const wrap = document.getElementById('scheduleWrap');
+  const thead = document.querySelector('#scheduleTable thead');
+  const tbody = document.querySelector('#scheduleTable tbody');
+
+  if (!schedule || schedule.length === 0) {
+    wrap.style.display = 'none';
+    return;
+  }
+
+  const frequency = document.getElementById('frequency').value;
+  const hasComponents = schedule[0].hasOwnProperty('principal_component');
+
+  thead.innerHTML = hasComponents
+    ? '<tr><th>Period</th><th>Due date</th><th>Installment</th><th>Principal</th><th>Interest</th><th>Balance left</th></tr>'
+    : '<tr><th>Period</th><th>Due date</th><th>Installment</th><th>Balance left</th></tr>';
+
+  tbody.innerHTML = schedule.map(row => {
+    const dueDate = calcDueDate(row.period, frequency);
+    if (hasComponents) {
+      return '<tr><td>' + row.period + '</td><td>' + dueDate + '</td><td>' + row.installment_amount + '</td><td>' +
+        row.principal_component + '</td><td>' + row.interest_component + '</td><td>' +
+        row.remaining_balance + '</td></tr>';
+    }
+    return '<tr><td>' + row.period + '</td><td>' + dueDate + '</td><td>' + row.installment_amount + '</td><td>' +
+      row.remaining_balance + '</td></tr>';
+  }).join('');
+
+  wrap.style.display = 'block';
+}
+
+async function calculate() {
+  setBanner('pending', 'Calculating…');
+  document.getElementById('stats').className = 'stats';
+
+  try {
+    const res = await fetch(baseUrl + '/calculate.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: Number(document.getElementById('amount').value),
+        rate: Number(document.getElementById('rate').value),
+        years: Number(document.getElementById('years').value),
+        frequency: document.getElementById('frequency').value,
+        method: document.getElementById('method').value
+      })
+    });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      setBanner('fail', data.message || 'Something went wrong.');
+      return;
+    }
+    clearBanner();
+    renderStats(data.data);
+    renderSchedule(data.schedule);
+  } catch (err) {
+    setBanner('fail', 'Request failed: ' + err.message);
+  }
+}
+</script>
+</body>
+</html>

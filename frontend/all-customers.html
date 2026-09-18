@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — All Customers</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Loan Desk</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+        <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="find-customer.html" data-staff-only>Customers</a>
+      <a href="calculator.html">Calculator</a>
+      <a href="activity-log.html" data-admin-only>Activity Log</a>
+      <a href="manage-staff.html" data-admin-only>Manage Staff</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-link">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="main wide">
+      <div class="page-head"><h1>All customers</h1></div>
+
+      <div class="form-card">
+        <div class="field">
+          <label>Search</label>
+          <input id="customerSearch" placeholder="Search by name, phone, or Ghana card" oninput="renderCustomers(allCustomers)" />
+        </div>
+      </div>
+
+      <div class="form-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Ghana Card</th>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Address</th>
+              <th>Registered</th>
+            </tr>
+          </thead>
+          <tbody id="customersBody">
+            <tr><td colspan="7" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+requirePageLogin();
+
+const user = currentUser();
+document.getElementById('sidebarName').textContent = user.username;
+document.getElementById('sidebarRole').textContent = user.role;
+
+if (user.role === 'admin') {
+  document.querySelectorAll('[data-staff-only]').forEach(el => el.style.display = 'none');
+}
+
+let allCustomers = [];
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+async function loadCustomers() {
+  const tbody = document.getElementById('customersBody');
+  tbody.innerHTML = '<tr><td colspan="7" class="empty">Loading…</td></tr>';
+
+  try {
+    const res = await fetch(baseUrl + '/get_all_customers.php', { credentials: 'include' });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      tbody.innerHTML = '<tr><td colspan="7" class="empty">' + escapeHtml(data.message || 'Could not load customers.') + '</td></tr>';
+      return;
+    }
+
+    allCustomers = data.customers;
+    renderCustomers(allCustomers);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">Request failed: ' + escapeHtml(err.message) + '</td></tr>';
+  }
+}
+
+function renderCustomers(customers) {
+  const tbody = document.getElementById('customersBody');
+  const query = document.getElementById('customerSearch').value.trim().toLowerCase();
+
+  const filtered = query
+    ? customers.filter(c =>
+        c.first_name.toLowerCase().includes(query) ||
+        c.last_name.toLowerCase().includes(query) ||
+        c.phone.includes(query) ||
+        c.ghana_card_number.toLowerCase().includes(query)
+      )
+    : customers;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">No customers found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(c =>
+    '<tr>' +
+      '<td>' + escapeHtml(c.ghana_card_number) + '</td>' +
+      '<td>' + escapeHtml(c.first_name) + ' ' + escapeHtml(c.last_name) + '</td>' +
+      '<td>' + escapeHtml(c.date_of_birth) + '</td>' +
+      '<td>' + escapeHtml(c.phone) + '</td>' +
+      '<td>' + escapeHtml(c.email || '—') + '</td>' +
+      '<td>' + escapeHtml(c.address || '—') + '</td>' +
+      '<td>' + escapeHtml(c.created_at) + '</td>' +
+    '</tr>'
+  ).join('');
+}
+
+loadCustomers();
+</script>
+</body>
+</html>

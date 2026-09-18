@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — Customers</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Loan Desk</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="find-customer.html" class="active">Customers</a>
+      <a href="calculator.html">Calculator</a>
+      <a href="activity-log.html" data-admin-only>Activity Log</a>
+      <a href="manage-staff.html" data-admin-only>Manage Staff</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-link">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="main">
+      <div class="page-head"><h1>Customers</h1></div>
+      <p class="lede">Search by name, phone, or Ghana card number. Register a new customer if they're not found.</p>
+
+      <div class="form-card">
+        <div class="grid" style="grid-template-columns: 1fr auto;">
+          <div class="field"><input id="searchTerm" placeholder="Name, phone, or Ghana card number" onkeydown="if(event.key === 'Enter') search()" /></div>
+          <div class="field"><button class="btn" onclick="search()">Search</button></div>
+        </div>
+        <div id="results"></div>
+      </div>
+
+      <div class="form-card">
+        <p class="settings-toggle" onclick="document.getElementById('newCustomerForm').style.display =
+            document.getElementById('newCustomerForm').style.display === 'block' ? 'none' : 'block'">
+          + Register a new customer
+        </p>
+        <div id="newCustomerForm" style="display:none; margin-top:16px;">
+          <div class="grid">
+            <div class="field"><label>Ghana Card Number</label><input id="ghanaCard" placeholder="GHA-000000000-0" /></div>
+            <div class="field"><label>First name</label><input id="firstName" /></div>
+            <div class="field"><label>Last name</label><input id="lastName" /></div>
+            <div class="field"><label>Date of birth</label><input id="dob" type="date" /></div>
+            <div class="field"><label>Phone number</label><input id="phone" placeholder="e.g. 0244000000" /></div>
+            <div class="field"><label>Email (optional)</label><input id="email" /></div>
+            <div class="field"><label>Address</label><input id="address" /></div>
+          </div>
+          <button class="btn" onclick="createCustomer()">Save customer & continue</button>
+        </div>
+        <div id="banner" class="banner"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+requirePageLogin();
+
+const user = currentUser();
+document.getElementById('sidebarName').textContent = user.username;
+document.getElementById('sidebarRole').textContent = user.role;
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+function setBanner(kind, text) {
+  const el = document.getElementById('banner');
+  el.className = 'banner show ' + kind;
+  el.textContent = text;
+}
+
+function selectCustomer(id, name) {
+  sessionStorage.setItem('selectedCustomerId', id);
+  sessionStorage.setItem('selectedCustomerName', name);
+  window.location.href = 'loan.html';
+}
+
+async function search() {
+  const term = document.getElementById('searchTerm').value.trim();
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '<p class="empty">Searching…</p>';
+
+  if (term === '') {
+    resultsEl.innerHTML = '<p class="empty">Type a name, phone, or Ghana card number above.</p>';
+    return;
+  }
+
+  try {
+    const res = await fetch(baseUrl + '/search_customer.php?q=' + encodeURIComponent(term), {
+      credentials: 'include'
+    });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      resultsEl.innerHTML = '<p class="empty">' + escapeHtml(data.message || 'Search failed.') + '</p>';
+      return;
+    }
+
+    if (data.customers.length === 0) {
+      resultsEl.innerHTML = '<p class="empty">No matches. Register them as a new customer below.</p>';
+      return;
+    }
+
+    resultsEl.innerHTML = data.customers.map(c => {
+      const fullName = escapeHtml(c.first_name + ' ' + c.last_name);
+      const safeNameForClick = (c.first_name + ' ' + c.last_name).replace(/'/g, "\\'").replace(/</g, '');
+      return '<div class="result">' +
+        '<div>' +
+          '<div class="name">' + fullName + '</div>' +
+          '<div class="meta">' + escapeHtml(c.ghana_card_number) + '  ' + escapeHtml(c.phone) + '  DOB ' + escapeHtml(c.date_of_birth) + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<button class="btn secondary" onclick="toggleHistory(' + c.customer_id + ')">History</button> ' +
+          '<button class="btn secondary" onclick="selectCustomer(' + c.customer_id + ', \'' + safeNameForClick + '\')">Select</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="history-' + c.customer_id + '" style="display:none; margin: 10px 0 20px;"></div>';
+    }).join('');
+  } catch (err) {
+    resultsEl.innerHTML = '<p class="empty">Request failed: ' + escapeHtml(err.message) + '</p>';
+  }
+}
+
+async function toggleHistory(customerId) {
+  const el = document.getElementById('history-' + customerId);
+  const isOpen = el.style.display !== 'none';
+
+  if (isOpen) {
+    el.style.display = 'none';
+    return;
+  }
+
+  el.style.display = 'block';
+  el.innerHTML = '<p class="empty">Loading loan history…</p>';
+
+  try {
+    const res = await fetch(baseUrl + '/get_customer_loans.php?customer_id=' + customerId, {
+      credentials: 'include'
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      el.innerHTML = '<p class="empty">' + escapeHtml(data.message || 'Could not load loan history.') + '</p>';
+      return;
+    }
+
+    if (data.loans.length === 0) {
+      el.innerHTML = '<p class="empty">No loans on record for this customer.</p>';
+      return;
+    }
+
+    el.innerHTML = data.loans.map(loan => {
+      const scheduleId = 'schedule-' + loan.loan_id;
+      const scheduleRows = loan.schedule.map(row =>
+        '<tr>' +
+          '<td>' + escapeHtml(row.period) + '</td>' +
+          '<td>' + escapeHtml(row.due_date) + '</td>' +
+          '<td>' + escapeHtml(row.installment_amount) + '</td>' +
+          '<td>' + escapeHtml(row.principal_component) + '</td>' +
+          '<td>' + escapeHtml(row.interest_component) + '</td>' +
+          '<td>' + escapeHtml(row.remaining_balance) + '</td>' +
+          '<td>' + escapeHtml(row.status) + '</td>' +
+        '</tr>'
+      ).join('');
+
+      return '<div class="form-card">' +
+        '<div class="grid">' +
+          '<div><strong>Amount:</strong> ' + escapeHtml(loan.loan_amount) + '</div>' +
+          '<div><strong>Duration:</strong> ' + escapeHtml(loan.duration) + ' ' + escapeHtml(loan.duration_unit) + '</div>' +
+          '<div><strong>Rate:</strong> ' + escapeHtml(loan.interest_rate) + '%</div>' +
+          '<div><strong>Method:</strong> ' + escapeHtml(loan.interest_method) + '</div>' +
+          '<div><strong>Total payable:</strong> ' + escapeHtml(loan.total_payable) + '</div>' +
+          '<div><strong>Status:</strong> ' + escapeHtml(loan.status) + '</div>' +
+          '<div><strong>Created:</strong> ' + escapeHtml(loan.created_at) + '</div>' +
+        '</div>' +
+        '<button type="button" class="btn secondary" onclick="document.getElementById(\'' + scheduleId + '\').style.display = document.getElementById(\'' + scheduleId + '\').style.display === \'none\' ? \'block\' : \'none\';">Toggle schedule</button>' +
+        '<div id="' + scheduleId + '" style="display:none; margin-top:10px;">' +
+          '<table>' +
+            '<thead><tr><th>Period</th><th>Due date</th><th>Installment</th><th>Principal</th><th>Interest</th><th>Balance left</th><th>Status</th></tr></thead>' +
+            '<tbody>' + scheduleRows + '</tbody>' +
+          '</table>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  } catch (err) {
+    el.innerHTML = '<p class="empty">Request failed: ' + escapeHtml(err.message) + '</p>';
+  }
+}
+
+async function createCustomer() {
+  const ghanaCard = document.getElementById('ghanaCard').value.trim();
+  const firstName = document.getElementById('firstName').value.trim();
+  const lastName = document.getElementById('lastName').value.trim();
+  const dob = document.getElementById('dob').value;
+  const phone = document.getElementById('phone').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const address = document.getElementById('address').value.trim();
+
+  if (!ghanaCard || !firstName || !lastName || !dob || !phone) {
+    setBanner('fail', 'Ghana card number, name, date of birth and phone are required.');
+    return;
+  }
+
+  if (!/^GHA-\d{9}-\d$/.test(ghanaCard)) {
+    setBanner('fail', 'Ghana card number must be in the format GHA-XXXXXXXXX-X.');
+    return;
+  }
+
+  if (!/^0\d{9}$/.test(phone)) {
+    setBanner('fail', 'Phone number must be 10 digits starting with 0 (e.g. 0244000000).');
+    return;
+  }
+
+  if (!/^[A-Za-z' -]{2,}$/.test(firstName)) {
+    setBanner('fail', 'First name must contain only letters and be at least 2 characters.');
+    return;
+  }
+
+  if (!/^[A-Za-z' -]{2,}$/.test(lastName)) {
+    setBanner('fail', 'Last name must contain only letters and be at least 2 characters.');
+    return;
+  }
+
+  try {
+    const res = await fetch(baseUrl + '/create_customer.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ghana_card_number: ghanaCard,
+        first_name: firstName,
+        last_name: lastName,
+        date_of_birth: dob,
+        phone, email, address
+      })
+    });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      setBanner('fail', data.message || 'Could not register customer.');
+      return;
+    }
+
+    selectCustomer(data.customer_id, firstName + ' ' + lastName);
+  } catch (err) {
+    setBanner('fail', 'Request failed: ' + err.message);
+  }
+}
+</script>

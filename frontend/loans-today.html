@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — Loans Today</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Loan Desk</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+        <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="find-customer.html" data-staff-only>Customers</a>
+      <a href="calculator.html">Calculator</a>
+      <a href="activity-log.html" data-admin-only>Activity Log</a>
+      <a href="manage-staff.html" data-admin-only>Manage Staff</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-link">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="main wide">
+      <div class="page-head"><h1>Loans created today</h1></div>
+
+      <div class="form-card">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Amount</th>
+              <th>Duration</th>
+              <th>Rate</th>
+              <th>Method</th>
+              <th>Frequency</th>
+              <th>Total payable</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="loansBody">
+            <tr><td colspan="9" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+requirePageRole(['admin']);
+
+const user = currentUser();
+document.getElementById('sidebarName').textContent = user.username;
+document.getElementById('sidebarRole').textContent = user.role;
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+async function loadLoansToday() {
+  const tbody = document.getElementById('loansBody');
+  tbody.innerHTML = '<tr><td colspan="9" class="empty">Loading…</td></tr>';
+
+  try {
+    const res = await fetch(baseUrl + '/get_loans_today.php', { credentials: 'include' });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+    if (res.status === 403) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">You don\'t have permission to view this.</td></tr>';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">' + escapeHtml(data.message || 'Could not load loans.') + '</td></tr>';
+      return;
+    }
+
+    if (data.loans.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No loans created today.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.loans.map(l =>
+      '<tr>' +
+        '<td>' + escapeHtml(l.first_name) + ' ' + escapeHtml(l.last_name) + '</td>' +
+        '<td>' + escapeHtml(l.loan_amount) + '</td>' +
+        '<td>' + escapeHtml(l.duration) + ' ' + escapeHtml(l.duration_unit) + '</td>' +
+        '<td>' + escapeHtml(l.interest_rate) + '%</td>' +
+        '<td>' + escapeHtml(l.interest_method) + '</td>' +
+        '<td>' + escapeHtml(l.repayment_frequency) + '</td>' +
+        '<td>' + escapeHtml(l.total_payable) + '</td>' +
+        '<td>' + escapeHtml(l.status) + '</td>' +
+        '<td>' + escapeHtml(l.created_at) + '</td>' +
+      '</tr>'
+    ).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">Request failed: ' + escapeHtml(err.message) + '</td></tr>';
+  }
+}
+
+loadLoansToday();
+</script>
+</body>
+</html>

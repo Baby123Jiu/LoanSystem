@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — Activity Log</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">Loan Desk</div>
+    <div class="sidebar-user">
+      <div class="name" id="sidebarName">—</div>
+      <div class="role" id="sidebarRole">—</div>
+    </div>
+    <nav>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="find-customer.html" data-staff-only>Customers</a>
+      <a href="calculator.html">Calculator</a>
+      <a href="activity-log.html" class="active" data-admin-only>Activity Log</a>
+      <a href="manage-staff.html" data-admin-only>Manage Staff</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-link">Log out</button>
+    </div>
+  </aside>
+
+  <div class="content">
+    <div class="main">
+      <div class="page-head"><h1>Activity log</h1></div>
+
+      <div class="form-card">
+        <div class="field">
+          <label>Search staff by username</label>
+          <input id="staffSearch" placeholder="e.g. KANKAM" oninput="renderStaff(allUsers)" />
+        </div>
+      </div>
+
+      <div class="form-card">
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>Username</th>
+              <th>Session</th>
+              <th>Account</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="staffBody">
+            <tr><td colspan="5" class="empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+<script>
+requirePageRole(['admin']);
+
+const user = currentUser();
+document.getElementById('sidebarName').textContent = user.username;
+document.getElementById('sidebarRole').textContent = user.role;
+
+let allUsers = [];
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+async function loadStaff() {
+  const tbody = document.getElementById('staffBody');
+  tbody.innerHTML = '<tr><td colspan="5" class="empty">Loading…</td></tr>';
+
+  try {
+    const res = await fetch(baseUrl + '/get_users.php', { credentials: 'include' });
+
+    if (res.status === 401) {
+      window.location.href = 'login.html';
+      return;
+    }
+    if (res.status === 403) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">You don\'t have permission to view this.</td></tr>';
+      return;
+    }
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">' + escapeHtml(data.message || 'Could not load staff.') + '</td></tr>';
+      return;
+    }
+
+    allUsers = data.users;
+    renderStaff(allUsers);
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Request failed: ' + escapeHtml(err.message) + '</td></tr>';
+  }
+}
+
+function renderStaff(users) {
+  const tbody = document.getElementById('staffBody');
+  const query = document.getElementById('staffSearch').value.trim().toLowerCase();
+
+  const filtered = query
+    ? users.filter(u => u.username.toLowerCase().includes(query))
+    : users;
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">No staff found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(u => {
+    const sessionLabel = u.session_state === 'in'
+      ? 'In since ' + escapeHtml(u.last_event_at)
+      : (u.last_event_at ? 'Out since ' + escapeHtml(u.last_event_at) : 'Never logged in');
+
+    const isBlocked = u.status === 'blocked';
+    const nextStatus = isBlocked ? 'active' : 'blocked';
+    const toggleLabel = isBlocked ? 'Unblock' : 'Block';
+
+    const rowHtml =
+      '<tr>' +
+        '<td><button type="button" class="expand-toggle" onclick="toggleExpand(' + u.user_id + ')" id="arrow-' + u.user_id + '">▾</button></td>' +
+        '<td>' + escapeHtml(u.username) + ' <span class="ledger-tag">' + escapeHtml(u.role) + '</span></td>' +
+        '<td>' + sessionLabel + '</td>' +
+        '<td>' + (isBlocked ? 'Blocked' : 'Active') + '</td>' +
+        '<td><button type="button" class="btn" onclick="toggleStatus(' + u.user_id + ', \'' + nextStatus + '\')">' + toggleLabel + '</button></td>' +
+      '</tr>';
+
+    const detailRowHtml =
+      '<tr id="detail-' + u.user_id + '" style="display:none;">' +
+        '<td colspan="5">' +
+          '<div class="grid" style="grid-template-columns: 1fr auto; margin-bottom: 10px;">' +
+            '<div class="field"><label>Filter by date</label><input type="date" id="detail-date-' + u.user_id + '" /></div>' +
+            '<div class="field" style="display:flex; align-items:flex-end;"><button type="button" class="btn" onclick="loadUserDetail(' + u.user_id + ')">Filter</button></div>' +
+          '</div>' +
+          '<table>' +
+            '<thead><tr><th>Time</th><th>Action</th><th>Details</th></tr></thead>' +
+            '<tbody id="detail-body-' + u.user_id + '"><tr><td colspan="3" class="empty">Loading…</td></tr></tbody>' +
+          '</table>' +
+        '</td>' +
+      '</tr>';
+
+    return rowHtml + detailRowHtml;
+  }).join('');
+}
+
+async function toggleExpand(userId) {
+  const detailRow = document.getElementById('detail-' + userId);
+  const arrow = document.getElementById('arrow-' + userId);
+  const isOpen = detailRow.style.display !== 'none';
+
+  if (isOpen) {
+    detailRow.style.display = 'none';
+    arrow.textContent = '▾';
+    return;
+  }
+
+  detailRow.style.display = 'table-row';
+  arrow.textContent = '▴';
+  await loadUserDetail(userId);
+}
+
+async function loadUserDetail(userId) {
+  const tbody = document.getElementById('detail-body-' + userId);
+  tbody.innerHTML = '<tr><td colspan="3" class="empty">Loading…</td></tr>';
+
+  const dateInput = document.getElementById('detail-date-' + userId);
+  const date = dateInput ? dateInput.value : '';
+
+  const params = new URLSearchParams();
+  params.set('user_id', userId);
+  if (date) params.set('date', date);
+
+  try {
+    const res = await fetch(baseUrl + '/get_activity_log.php?' + params.toString(), { credentials: 'include' });
+    const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">' + escapeHtml(data.message || 'Could not load activity.') + '</td></tr>';
+      return;
+    }
+
+    if (data.logs.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3" class="empty">No activity found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.logs.map(log =>
+      '<tr>' +
+        '<td>' + escapeHtml(log.created_at) + '</td>' +
+        '<td>' + escapeHtml(log.action) + '</td>' +
+        '<td>' + escapeHtml(log.details) + '</td>' +
+      '</tr>'
+    ).join('');
+  } catch (err) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty">Request failed: ' + escapeHtml(err.message) + '</td></tr>';
+  }
+}
+
+async function toggleStatus(userId, newStatus) {
+  try {
+    const res = await fetch(baseUrl + '/toggle_user_status.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id: userId, status: newStatus })
+    });
+
+    const data = await res.json();
+    if (!res.ok || data.success === false) {
+      alert(data.message || 'Could not update status.');
+      return;
+    }
+
+    loadStaff();
+  } catch (err) {
+    alert('Request failed: ' + err.message);
+  }
+}
+
+loadStaff();
+</script>
+</body>
+</html>

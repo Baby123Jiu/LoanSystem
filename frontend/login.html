@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loan Desk — Sign in</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+<div class="card">
+  <p class="brand">Loan Desk</p>
+  <p class="sub">Staff sign-in</p>
+
+  <div class="field">
+    <label for="username">Username</label>
+    <input id="username" autocomplete="username" />
+  </div>
+  <div class="field">
+    <label for="password">Password</label>
+    <input id="password" type="password" autocomplete="current-password" />
+  </div>
+  <button class="btn" onclick="login()">Sign in</button>
+  <div id="loginError" class="error"></div>
+</div>
+
+<script>
+const API_BASE_URL = 'http://localhost/calculator/api';
+
+async function login() {
+  const errorEl = document.getElementById('loginError');
+  errorEl.className = 'error';
+
+  try {
+    const res = await fetch(API_BASE_URL + '/login.php', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value,
+        password: document.getElementById('password').value
+      })
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.success === false) {
+      errorEl.textContent = data.message || 'Login failed.';
+      errorEl.className = 'error show';
+      return;
+    }
+
+    sessionStorage.setItem('apiBaseUrl', API_BASE_URL);
+    sessionStorage.setItem('username', data.user.username);
+    sessionStorage.setItem('role', data.user.role);
+
+        window.location.href = 'dashboard.html';
+  } catch (err) {
+    errorEl.textContent = 'Request failed: ' + err.message;
+    errorEl.className = 'error show';
+  }
+}
+</script>
+</body>
+</html>
