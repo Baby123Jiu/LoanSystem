@@ -26,3 +26,22 @@ function requireLogin(): array
         "role" => $_SESSION["role"]
     ];
 }
+
+// Same as requireLogin(), but also checks the account's role.
+// Use this for anything only an admin should be able to do.
+function requireRole(array $allowedRoles): array
+{
+    $user = requireLogin();
+
+    if (!in_array($user["role"], $allowedRoles, true)) {
+        http_response_code(403);
+        header("Content-Type: application/json");
+        echo json_encode([
+            "success" => false,
+            "message" => "You don't have permission to do that."
+        ]);
+        exit;
+    }
+
+    return $user;
+}
