@@ -2,10 +2,11 @@
 
 require_once "../middleware/auth.php";
 header("Content-Type: application/json");
-requireLogin();
+$user = requireLogin();
 
 require_once "../models/LoanCalculator.php";
 require_once "../config/Database.php";
+require_once "../models/ActivityLogger.php";
 
 function respondError(string $message, int $status = 400): void
 {
@@ -55,22 +56,27 @@ if ($conn === null) {
     respondError("Could not connect to the database. Please try again later.", 500);
 }
 
+$logger = new ActivityLogger($conn);
+$logDetails = "customer_id={$customerId} amount={$amount} rate={$rate} years={$years} frequency={$frequency} method={$method}";
+
 try {
-    // Confirm the customer actually exists before creating a loan for them
     $check = $conn->prepare("SELECT customer_id FROM customers WHERE customer_id = :customer_id");
     $check->execute(["customer_id" => $customerId]);
 
     if ($check->fetch() === false) {
+        $logger->log($user["user_id"], "create_loan_failed", $logDetails . " - customer not found");
         respondError("No customer found with that customer_id.", 404);
     }
 
-    $calculator = new LoanCalculator();
+      $calculator = new LoanCalculator();
 
     try {
         $result = $method === "reducing"
             ? $calculator->calculateReducing($amount, $rate, $years, $frequency)
             : $calculator->calculateFlat($amount, $rate, $years, $frequency);
+        $schedule = $calculator->generateSchedule($amount, $rate, $years, $frequency, $method);
     } catch (InvalidArgumentException $e) {
+        $logger->log($user["user_id"], "create_loan_failed", $logDetails . " - " . $e->getMessage());
         respondError($e->getMessage());
     }
 
@@ -102,12 +108,44 @@ try {
         "remaining_balance" => $result["total_payable"]
     ]);
 
+       $loanId = (int) $conn->lastInsertId();
+
+    $scheduleStmt = $conn->prepare("
+        INSERT INTO loan_schedule (
+            loan_id, period, due_date, installment_amount,
+            principal_component, interest_component, remaining_balance
+        ) VALUES (
+            :loan_id, :period, :due_date, :installment_amount,
+            :principal_component, :interest_component, :remaining_balance
+        )
+    ");
+
+    $monthsPerPeriod = $frequency === "monthly" ? 1 : 12;
+
+    foreach ($schedule as $row) {
+        $dueDate = (new DateTime())->modify("+" . ($row["period"] * $monthsPerPeriod) . " months")->format("Y-m-d");
+
+        $scheduleStmt->execute([
+            "loan_id" => $loanId,
+            "period" => $row["period"],
+            "due_date" => $dueDate,
+            "installment_amount" => $row["installment_amount"],
+            "principal_component" => $row["principal_component"] ?? ($row["installment_amount"] - ($row["interest_component"] ?? 0)),
+            "interest_component" => $row["interest_component"] ?? 0,
+            "remaining_balance" => $row["remaining_balance"]
+        ]);
+    }
+
+    $logger->log($user["user_id"], "create_loan", $logDetails . " - loan_id={$loanId}");
+
     echo json_encode([
         "success" => true,
-        "loan_id" => (int) $conn->lastInsertId(),
-        "data" => $result
+        "loan_id" => $loanId,
+        "data" => $result,
+        "schedule" => $schedule
     ], JSON_PRETTY_PRINT);
 
 } catch (PDOException $e) {
+    $logger->log($user["user_id"], "create_loan_failed", $logDetails . " - database error");
     respondError("A database error occurred while saving the loan.", 500);
 }

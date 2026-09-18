@@ -2,9 +2,11 @@
 
 require_once "../middleware/auth.php";
 header("Content-Type: application/json");
-requireLogin();
+$user = requireLogin();
 
 require_once "../models/LoanCalculator.php";
+require_once "../config/Database.php";
+require_once "../models/ActivityLogger.php";
 
 function respondError(string $message): void
 {
@@ -43,6 +45,9 @@ $frequency = (string) $data["frequency"];
 $method = isset($data["method"]) ? (string) $data["method"] : "flat";
 
 $calculator = new LoanCalculator();
+$database = new Database();
+$conn = $database->getConnection();
+$logDetails = "amount={$amount} rate={$rate} years={$years} frequency={$frequency} method={$method}";
 
 try {
     if ($method === "reducing") {
@@ -50,13 +55,26 @@ try {
     } elseif ($method === "flat") {
         $result = $calculator->calculateFlat($amount, $rate, $years, $frequency);
     } else {
+        if ($conn !== null) {
+            (new ActivityLogger($conn))->log($user["user_id"], "calculate_failed", $logDetails . " - invalid method");
+        }
         respondError("Method must be 'flat' or 'reducing'.");
     }
+
+    $schedule = $calculator->generateSchedule($amount, $rate, $years, $frequency, $method);
 } catch (InvalidArgumentException $e) {
+    if ($conn !== null) {
+        (new ActivityLogger($conn))->log($user["user_id"], "calculate_failed", $logDetails . " - " . $e->getMessage());
+    }
     respondError($e->getMessage());
+}
+
+if ($conn !== null) {
+    (new ActivityLogger($conn))->log($user["user_id"], "calculate", $logDetails);
 }
 
 echo json_encode([
     "success" => true,
-    "data" => $result
+    "data" => $result,
+    "schedule" => $schedule
 ], JSON_PRETTY_PRINT);

@@ -4,6 +4,7 @@ session_start();
 header("Content-Type: application/json");
 
 require_once "../config/Database.php";
+require_once "../models/ActivityLogger.php";
 
 function respondError(string $message, int $status = 400): void
 {
@@ -32,7 +33,7 @@ if ($conn === null) {
 }
 
 $stmt = $conn->prepare(
-    "SELECT user_id, username, password_hash, role FROM users WHERE username = :username"
+    "SELECT user_id, username, password_hash, role, status FROM users WHERE username = :username"
 );
 $stmt->execute(["username" => $username]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -44,12 +45,19 @@ if ($user === false || !password_verify($password, $user["password_hash"])) {
     respondError("Invalid username or password.", 401);
 }
 
+if ($user["status"] === "blocked") {
+    (new ActivityLogger($conn))->log($user["user_id"], "login_blocked", "Blocked account attempted login.");
+    respondError("This account has been blocked. Contact an administrator.", 403);
+}
+
 // Prevents session fixation: issue a fresh session ID on login
 session_regenerate_id(true);
 
 $_SESSION["user_id"] = $user["user_id"];
 $_SESSION["username"] = $user["username"];
 $_SESSION["role"] = $user["role"];
+
+(new ActivityLogger($conn))->log($user["user_id"], "login", "Logged in.");
 
 echo json_encode([
     "success" => true,
